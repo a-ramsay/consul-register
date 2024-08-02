@@ -1,0 +1,30 @@
+{
+   "name": "docker-consul-register",
+   "version": "1.0.0",
+   "main": "index.js",
+   "scripts": {
+      "start": "tsx src/app.ts",
+      "build": "tsc",
+      "test": "echo \"Error: no test specified\" && exit 1",
+      "docker:build": "docker build -t github.com/a-ramsay/docker-consul-register .",
+      "docker:run": "docker run -it --rm github.com/a-ramsay/docker-consul-register"
+   },
+   "author": "",
+   "license": "ISC",
+   "description": "",
+   "devDependencies": {
+      "@tsconfig/node20": "^20.1.4",
+      "@types/dockerode": "^3.3.31",
+      "@types/eslint": "^9.6.0",
+      "@types/node": "^22.0.2",
+      "@typescript-eslint/parser": "^8.0.0",
+      "eslint": "^9.8.0",
+      "prettier": "^3.3.3",
+      "tsx": "^4.16.5",
+      "typescript": "^5.5.4"
+   },
+   "dependencies": {
+      "dockerode": "^4.0.2",
+      "zod": "^3.23.8"
+   }
+}

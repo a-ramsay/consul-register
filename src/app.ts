@@ -112,7 +112,7 @@ function getServiceFromLabels(
 
    const serviceName =
       traefikLabels.find(([key]) => key.match(routerRulePattern))?.[1] ??
-      container.Name;
+      container.Name?.replace(/^\//, "");
 
    if (exposedPorts.length > 0) {
       const servicePort =

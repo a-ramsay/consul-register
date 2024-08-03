@@ -1,10 +1,12 @@
 import Dockerode from "dockerode";
+import logger from "./logger";
 import { z } from "zod";
 import {
    deregisterService,
    getRegisteredServices,
    registerService,
 } from "./consul";
+import { log } from "console";
 
 const LABEL_PREFIX = process.env.LABEL_PREFIX ?? "traefik";
 
@@ -15,11 +17,14 @@ const portPattern = new RegExp(
    `^${LABEL_PREFIX}\.http\.services\.(.+?)\.loadbalancer\.server\.port`,
 );
 
+const abortController = new AbortController();
+
 async function main() {
    const startTime = Date.now();
    const docker = new Dockerode();
 
    // Check for missing services on start
+   logger.info("Checking for missing services");
    const containers = await docker.listContainers();
    const runningContainers = await Promise.all(
       containers
@@ -46,6 +51,7 @@ async function main() {
    );
 
    // Check for services that are not running anymore
+   logger.info("Checking for services that are not running anymore");
    const servicesToRemove = Object.entries(registeredServices)
       .filter(
          ([serviceName, service]) =>
@@ -58,8 +64,10 @@ async function main() {
    );
 
    // Listen for Docker events
+   logger.info("Listening for Docker events");
    const stream = await docker.getEvents({
       since: Math.floor(startTime / 1000),
+      abortSignal: abortController.signal,
       filters: {
          event: ["start", "die", "stop", "kill"],
          type: ["container"],
@@ -128,8 +136,17 @@ function getServiceFromLabels(
 }
 
 main().catch((err) => {
-   console.error("Error in main function:", err);
+   logger.error(err);
    process.exit(1);
+});
+
+process.on("SIGINT", () => {
+   logger.info("Received SIGINT, stopping the service");
+   abortController.abort();
+});
+process.on("SIGTERM", () => {
+   logger.info("Received SIGTERM, stopping the service");
+   abortController.abort();
 });
 
 const dockerEventSchema = z.object({

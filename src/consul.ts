@@ -1,3 +1,5 @@
+import logger from "./logger";
+
 const CONSUL_ADDR = process.env.CONSUL_ADDR ?? "http://localhost:8500";
 
 export async function registerService(
@@ -5,7 +7,7 @@ export async function registerService(
    port: number,
    tags: string[],
 ) {
-   await fetch(`${CONSUL_ADDR}/v1/agent/service/register`, {
+   const request = await fetch(`${CONSUL_ADDR}/v1/agent/service/register`, {
       method: "PUT",
       body: JSON.stringify({
          Name: name,
@@ -14,16 +16,42 @@ export async function registerService(
          Port: port,
       }),
    });
+
+   if (!request.ok) {
+      const error = await request.text();
+      logger.error(error);
+      throw new Error(
+         `Failed to register service: (${request.status}) ${request.statusText}`,
+      );
+   }
 }
 
 export async function deregisterService(name: string) {
-   await fetch(`${CONSUL_ADDR}/v1/agent/service/deregister/${name}`, {
-      method: "PUT",
-   });
+   const request = await fetch(
+      `${CONSUL_ADDR}/v1/agent/service/deregister/${name}`,
+      {
+         method: "PUT",
+      },
+   );
+
+   if (!request.ok) {
+      const error = await request.text();
+      logger.error(error);
+      throw new Error(
+         `Failed to register service: (${request.status}) ${request.statusText}`,
+      );
+   }
 }
 
 export async function getRegisteredServices() {
    const response = await fetch(`${CONSUL_ADDR}/v1/agent/services`);
+   if (!response.ok) {
+      const error = await response.text();
+      logger.error(error);
+      throw new Error(
+         `Failed to register service: (${response.status}) ${response.statusText}`,
+      );
+   }
    return response.json() as Promise<ServiceResponse>;
 }
 

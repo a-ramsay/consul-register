@@ -1,13 +1,65 @@
 import Dockerode from "dockerode";
 import { z } from "zod";
-import { deregisterService, registerService } from "./consul";
+import {
+   deregisterService,
+   getRegisteredServices,
+   registerService,
+} from "./consul";
 
 const LABEL_PREFIX = process.env.LABEL_PREFIX ?? "traefik";
 
+const routerRulePattern = new RegExp(
+   `^${LABEL_PREFIX}\.http\.routers\.(.+?)\.rule`,
+);
+const portPattern = new RegExp(
+   `^${LABEL_PREFIX}\.http\.services\.(.+?)\.loadbalancer\.server\.port`,
+);
+
 async function main() {
+   const startTime = Date.now();
    const docker = new Dockerode();
 
+   // Check for missing services on start
+   const containers = await docker.listContainers();
+   const runningContainers = await Promise.all(
+      containers
+         .filter((container) => container.State === "running")
+         .map((container) => docker.getContainer(container.Id).inspect()),
+   );
+
+   const runningServices = runningContainers
+      .map((container) => getServiceFromLabels(container))
+      .filter(Boolean) as ServiceDescription[];
+   const registeredServices = await getRegisteredServices();
+   const servicesToRegister = runningServices.filter(
+      (service) => !registeredServices[service.serviceName],
+   );
+
+   await Promise.all(
+      servicesToRegister.map((service) =>
+         registerService(
+            service.serviceName,
+            service.servicePort,
+            service.traefikLabels,
+         ),
+      ),
+   );
+
+   // Check for services that are not running anymore
+   const servicesToRemove = Object.entries(registeredServices)
+      .filter(
+         ([serviceName, service]) =>
+            !runningServices.find((s) => s.serviceName === serviceName),
+      )
+      .map(([serviceName]) => serviceName);
+
+   await Promise.all(
+      servicesToRemove.map((serviceName) => deregisterService(serviceName)),
+   );
+
+   // Listen for Docker events
    const stream = await docker.getEvents({
+      since: Math.floor(startTime / 1000),
       filters: {
          event: ["start", "die", "stop", "kill"],
          type: ["container"],
@@ -19,40 +71,19 @@ async function main() {
 
       const containerId = eventData.id;
       console.log(
-         `Container ${eventData.Action}: ${JSON.stringify(eventData, null, 2)}`,
+         `Container ${eventData.Action}: ${eventData.Actor.Attributes.name}`,
       );
       if (eventData.Action === "start") {
          const container = await docker.getContainer(containerId).inspect();
 
-         const labels = container.Config?.Labels;
-         const exposedPorts = Object.values(container.NetworkSettings?.Ports)
-            .filter((mount) => mount !== null)
-            .map((mount) => +mount[0]!.HostPort);
-
-         if (exposedPorts.length === 1) {
+         const service = getServiceFromLabels(container);
+         if (service) {
             await registerService(
-               eventData.Actor.Attributes.name!,
-               exposedPorts[0]!,
-               Object.entries(labels ?? {})
-                  .filter(([key]) => key.startsWith(LABEL_PREFIX))
-                  .map(([key, value]) => `${key}=${value}`),
+               service.serviceName,
+               service.servicePort,
+               service.traefikLabels,
             );
-            console.log(
-               `Registered service ${eventData.Actor.Attributes.name} on port ${exposedPorts[0]}`,
-            );
-         } else if (exposedPorts.length > 1) {
-            for (const port of exposedPorts) {
-               await registerService(
-                  `${eventData.Actor.Attributes.name}-${port}`,
-                  port,
-                  Object.entries(labels ?? {})
-                     .filter(([key]) => key.startsWith(LABEL_PREFIX))
-                     .map(([key, value]) => `${key}=${value}`),
-               );
-               console.log(
-                  `Registered service ${eventData.Actor.Attributes.name}-${port} on port ${port}`,
-               );
-            }
+            console.log(`Registered service ${service.serviceName}`);
          }
       } else {
          await deregisterService(eventData.Actor.Attributes.name!);
@@ -64,6 +95,36 @@ async function main() {
       console.error("Error while listening to Docker events:", err);
       throw err;
    });
+}
+
+function getServiceFromLabels(
+   container: Dockerode.ContainerInspectInfo,
+): ServiceDescription | undefined {
+   const labels = container.Config?.Labels;
+   const exposedPorts = Object.values(container.NetworkSettings?.Ports)
+      .filter((mount) => mount !== null)
+      .map((mount) => +mount[0]!.HostPort);
+   exposedPorts.sort();
+
+   const traefikLabels = Object.entries(labels ?? {}).filter(([key]) =>
+      key.startsWith(LABEL_PREFIX),
+   );
+
+   const serviceName =
+      traefikLabels.find(([key]) => key.match(routerRulePattern))?.[1] ??
+      container.Name;
+
+   if (exposedPorts.length > 0) {
+      const servicePort =
+         traefikLabels.find(([key]) => key.match(portPattern))?.[1] ??
+         exposedPorts[0];
+
+      return {
+         serviceName,
+         servicePort: +servicePort,
+         traefikLabels: traefikLabels.map(([key, value]) => `${key}=${value}`),
+      };
+   }
 }
 
 main().catch((err) => {
@@ -87,3 +148,9 @@ const dockerEventSchema = z.object({
 });
 
 export type DockerEvent = z.infer<typeof dockerEventSchema>;
+
+type ServiceDescription = {
+   serviceName: string;
+   servicePort: number;
+   traefikLabels: string[];
+};

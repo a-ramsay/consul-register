@@ -118,18 +118,21 @@ function getServiceFromLabels(
       key.startsWith(LABEL_PREFIX),
    );
 
-   const serviceName =
-      traefikLabels.find(([key]) => key.match(routerRulePattern))?.[1] ??
-      container.Name?.replace(/^\//, "");
+   const ruleLabel = traefikLabels.find(([key]) =>
+      key.match(routerRulePattern),
+   );
+   const portLabel = traefikLabels.find(([key]) => key.match(portPattern));
+
+   const serviceName = ruleLabel
+      ? ruleLabel[0].match(routerRulePattern)![1]
+      : container.Name?.replace(/^\//, "");
 
    if (exposedPorts.length > 0) {
-      const servicePort =
-         traefikLabels.find(([key]) => key.match(portPattern))?.[1] ??
-         exposedPorts[0];
+      const servicePort = portLabel ? +portLabel[1] : +exposedPorts[0];
 
       return {
          serviceName,
-         servicePort: +servicePort,
+         servicePort,
          traefikLabels: traefikLabels.map(([key, value]) => `${key}=${value}`),
       };
    }

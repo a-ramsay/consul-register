@@ -10,6 +10,7 @@ export async function registerService(
    const request = await fetch(`${CONSUL_ADDR}/v1/agent/service/register`, {
       method: "PUT",
       body: JSON.stringify({
+         ID: name,
          Name: name,
          Tags: tags,
          EnableTagOverride: true,

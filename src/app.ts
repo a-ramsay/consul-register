@@ -6,7 +6,6 @@ import {
    getRegisteredServices,
    registerService,
 } from "./consul";
-import { log } from "console";
 
 const LABEL_PREFIX = process.env.LABEL_PREFIX ?? "traefik";
 
@@ -18,6 +17,8 @@ const portPattern = new RegExp(
 );
 
 const abortController = new AbortController();
+const unregisterEvents = ["die", "stop", "kill", "destroy", "rename"];
+const registerEvents = ["start", "restart", "update"];
 
 async function main() {
    const startTime = Date.now();
@@ -69,7 +70,7 @@ async function main() {
       since: Math.floor(startTime / 1000),
       abortSignal: abortController.signal,
       filters: {
-         event: ["start", "die", "stop", "kill"],
+         event: [...unregisterEvents, ...registerEvents],
          type: ["container"],
       },
    });
@@ -81,15 +82,17 @@ async function main() {
       console.log(
          `Container ${eventData.Action}: ${eventData.Actor.Attributes.name}`,
       );
-      if (eventData.Action === "start") {
+      if (registerEvents.includes(eventData.Action)) {
          const container = await docker.getContainer(containerId).inspect();
 
          const service = getServiceFromLabels(container);
+         const connect = !!container.Config.Labels?.["consul.connect"];
          if (service) {
             await registerService(
                service.serviceName,
                service.servicePort,
                service.traefikLabels,
+               connect,
             );
             console.log(`Registered service ${service.serviceName}`);
          }

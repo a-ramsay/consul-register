@@ -6,6 +6,7 @@ export async function registerService(
    name: string,
    port: number,
    tags: string[],
+   connect?: boolean,
 ) {
    const request = await fetch(`${CONSUL_ADDR}/v1/agent/service/register`, {
       method: "PUT",
@@ -15,6 +16,7 @@ export async function registerService(
          Tags: tags,
          EnableTagOverride: true,
          Port: port,
+         Connect: connect ? {} : undefined,
       }),
    });
 

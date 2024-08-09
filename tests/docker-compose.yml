@@ -1,0 +1,10 @@
+services:
+   whoami:
+      image: "containous/whoami"
+      ports:
+         - "8080:80"
+      labels:
+         - consul.connect=true
+         - traefik.enable=true
+         - traefik.http.routers.whoami.rule=Host(`whoami.localhost`)
+         - traefik.http.services.whoami.loadbalancer.server.port=8080

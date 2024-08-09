@@ -3,6 +3,7 @@ import logger from "./logger";
 const CONSUL_ADDR = process.env.CONSUL_ADDR ?? "http://localhost:8500";
 
 export async function registerService(
+   id: string,
    name: string,
    port: number,
    tags: string[],
@@ -11,7 +12,7 @@ export async function registerService(
    const request = await fetch(`${CONSUL_ADDR}/v1/agent/service/register`, {
       method: "PUT",
       body: JSON.stringify({
-         ID: name,
+         ID: id,
          Name: name,
          Tags: tags,
          EnableTagOverride: true,
@@ -37,11 +38,11 @@ export async function deregisterService(name: string) {
       },
    );
 
-   if (!request.ok) {
+   if (!request.ok && request.status !== 404) {
       const error = await request.text();
       logger.error(error);
       throw new Error(
-         `Failed to register service: (${request.status}) ${request.statusText}`,
+         `Failed to deregister service: (${request.status}) ${request.statusText}`,
       );
    }
 }

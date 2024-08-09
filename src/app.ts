@@ -44,6 +44,7 @@ async function main() {
    await Promise.all(
       servicesToRegister.map((service) =>
          registerService(
+            service.serviceId,
             service.serviceName,
             service.servicePort,
             service.traefikLabels,
@@ -79,7 +80,7 @@ async function main() {
       const eventData = dockerEventSchema.parse(JSON.parse(event.toString()));
 
       const containerId = eventData.id;
-      console.log(
+      logger.info(
          `Container ${eventData.Action}: ${eventData.Actor.Attributes.name}`,
       );
       if (registerEvents.includes(eventData.Action)) {
@@ -87,24 +88,32 @@ async function main() {
 
          const service = getServiceFromLabels(container);
          const connect = !!container.Config.Labels?.["consul.connect"];
+         logger.info(
+            connect
+               ? "Service uses Consul Connect"
+               : "Service does not use Consul Connect",
+         );
          if (service) {
             await registerService(
+               service.serviceId,
                service.serviceName,
                service.servicePort,
                service.traefikLabels,
                connect,
             );
-            console.log(`Registered service ${service.serviceName}`);
+            logger.info(`Registered service ${service.serviceName}`);
          }
       } else {
          await deregisterService(eventData.Actor.Attributes.name!);
-         console.log(`Deregistered service ${eventData.Actor.Attributes.name}`);
+         logger.info(`Deregistered service ${eventData.Actor.Attributes.name}`);
       }
    });
 
    stream.on("error", (err) => {
-      console.error("Error while listening to Docker events:", err);
-      throw err;
+      if (!abortController.signal.aborted) {
+         console.error("Error while listening to Docker events:", err);
+         throw err;
+      }
    });
 }
 
@@ -130,10 +139,13 @@ function getServiceFromLabels(
       ? ruleLabel[0].match(routerRulePattern)![1]
       : container.Name?.replace(/^\//, "");
 
+   const serviceId = container.Name?.replace(/^\//, "");
+
    if (exposedPorts.length > 0) {
       const servicePort = portLabel ? +portLabel[1] : +exposedPorts[0];
 
       return {
+         serviceId,
          serviceName,
          servicePort,
          traefikLabels: traefikLabels.map(([key, value]) => `${key}=${value}`),
@@ -173,6 +185,7 @@ const dockerEventSchema = z.object({
 export type DockerEvent = z.infer<typeof dockerEventSchema>;
 
 type ServiceDescription = {
+   serviceId: string;
    serviceName: string;
    servicePort: number;
    traefikLabels: string[];

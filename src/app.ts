@@ -111,7 +111,7 @@ async function main() {
 
    stream.on("error", (err) => {
       if (!abortController.signal.aborted) {
-         console.error("Error while listening to Docker events:", err);
+         logger.error("Error while listening to Docker events:", err);
          throw err;
       }
    });

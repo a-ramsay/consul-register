@@ -17,7 +17,11 @@ export async function registerService(
          Tags: tags,
          EnableTagOverride: true,
          Port: port,
-         Connect: connect ? {} : undefined,
+         Connect: connect
+            ? {
+                 sidecar_service: {},
+              }
+            : undefined,
       }),
    });
 

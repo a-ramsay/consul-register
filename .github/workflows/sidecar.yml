@@ -1,5 +1,5 @@
 #
-name: Consul Register
+name: Consul Envoy Sidecar
 
 # This workflow runs when any of the following occur:
 # - A push is made to a branch called `main` or `seed`
@@ -14,7 +14,7 @@ on:
    pull_request:
    # This creates an environment variable called `IMAGE_NAME ` with the value `ghtoken_product_demo`.
 env:
-   IMAGE_NAME: consul-register
+   IMAGE_NAME: consul-envoy
 #
 jobs:
    # This pushes the image to GitHub Packages.
@@ -28,7 +28,7 @@ jobs:
          - uses: actions/checkout@v4
 
          - name: Build image
-           run: docker build . --file Dockerfile --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
+           run: docker build . --file Dockerfile.sidecar --tag $IMAGE_NAME --label "runnumber=${GITHUB_RUN_ID}"
 
          - name: Log in to registry
            run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin

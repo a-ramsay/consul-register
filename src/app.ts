@@ -15,6 +15,9 @@ const routerRulePattern = new RegExp(
 const portPattern = new RegExp(
    `^${LABEL_PREFIX}\.http\.services\.(.+?)\.loadbalancer\.server\.port`,
 );
+const consulConnectPattern = new RegExp(
+   `^${LABEL_PREFIX}\.consulcatalog\.connect`,
+);
 
 const abortController = new AbortController();
 const unregisterEvents = ["die", "stop", "kill", "destroy", "rename"];
@@ -48,6 +51,9 @@ async function main() {
             service.serviceName,
             service.servicePort,
             service.traefikLabels,
+            !!service.traefikLabels.find((label) =>
+               label.match(consulConnectPattern),
+            ),
          ),
       ),
    );
@@ -87,7 +93,9 @@ async function main() {
          const container = await docker.getContainer(containerId).inspect();
 
          const service = getServiceFromLabels(container);
-         const connect = !!container.Config.Labels?.["consul.connect"];
+         const connect = !!service?.traefikLabels.find(([key]) =>
+            key.match(consulConnectPattern),
+         );
          logger.info(
             connect
                ? "Service uses Consul Connect"

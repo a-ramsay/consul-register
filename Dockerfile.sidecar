@@ -1,0 +1,4 @@
+FROM hashicorp/consul
+FROM envoyproxy/envoy:v1.29-latest
+COPY --from=0 /bin/consul /bin/consul
+ENTRYPOINT ["consul", "connect", "envoy"]

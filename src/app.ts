@@ -6,18 +6,7 @@ import {
    getRegisteredServices,
    registerService,
 } from "./consul";
-
-const LABEL_PREFIX = process.env.LABEL_PREFIX ?? "traefik";
-
-const routerRulePattern = new RegExp(
-   `^${LABEL_PREFIX}\.http\.routers\.(.+?)\.rule`,
-);
-const portPattern = new RegExp(
-   `^${LABEL_PREFIX}\.http\.services\.(.+?)\.loadbalancer\.server\.port`,
-);
-const consulConnectPattern = new RegExp(
-   `^${LABEL_PREFIX}\.consulcatalog\.connect`,
-);
+import { getServiceFromLabels, ServiceDescription } from "./service";
 
 const abortController = new AbortController();
 const unregisterEvents = ["die", "stop", "kill", "destroy", "rename"];
@@ -51,9 +40,7 @@ async function main() {
             service.serviceName,
             service.servicePort,
             service.traefikLabels,
-            !!service.traefikLabels.find((label) =>
-               label.match(consulConnectPattern),
-            ),
+            service.connect,
          ),
       ),
    );
@@ -93,21 +80,18 @@ async function main() {
          const container = await docker.getContainer(containerId).inspect();
 
          const service = getServiceFromLabels(container);
-         const connect = !!service?.traefikLabels.find(([key]) =>
-            key.match(consulConnectPattern),
-         );
-         logger.info(
-            connect
-               ? "Service uses Consul Connect"
-               : "Service does not use Consul Connect",
-         );
          if (service) {
+            logger.info(
+               service.connect
+                  ? "Service uses Consul Connect"
+                  : "Service does not use Consul Connect",
+            );
             await registerService(
                service.serviceId,
                service.serviceName,
                service.servicePort,
                service.traefikLabels,
-               connect,
+               service.connect,
             );
             logger.info(`Registered service ${service.serviceName}`);
          }
@@ -123,42 +107,6 @@ async function main() {
          throw err;
       }
    });
-}
-
-function getServiceFromLabels(
-   container: Dockerode.ContainerInspectInfo,
-): ServiceDescription | undefined {
-   const labels = container.Config?.Labels;
-   const exposedPorts = Object.values(container.NetworkSettings?.Ports)
-      .filter((mount) => mount !== null)
-      .map((mount) => +mount[0]!.HostPort);
-   exposedPorts.sort();
-
-   const traefikLabels = Object.entries(labels ?? {}).filter(([key]) =>
-      key.startsWith(LABEL_PREFIX),
-   );
-
-   const ruleLabel = traefikLabels.find(([key]) =>
-      key.match(routerRulePattern),
-   );
-   const portLabel = traefikLabels.find(([key]) => key.match(portPattern));
-
-   const serviceName = ruleLabel
-      ? ruleLabel[0].match(routerRulePattern)![1]
-      : container.Name?.replace(/^\//, "");
-
-   const serviceId = container.Name?.replace(/^\//, "");
-
-   if (exposedPorts.length > 0) {
-      const servicePort = portLabel ? +portLabel[1] : +exposedPorts[0];
-
-      return {
-         serviceId,
-         serviceName,
-         servicePort,
-         traefikLabels: traefikLabels.map(([key, value]) => `${key}=${value}`),
-      };
-   }
 }
 
 main().catch((err) => {
@@ -191,10 +139,3 @@ const dockerEventSchema = z.object({
 });
 
 export type DockerEvent = z.infer<typeof dockerEventSchema>;
-
-type ServiceDescription = {
-   serviceId: string;
-   serviceName: string;
-   servicePort: number;
-   traefikLabels: string[];
-};

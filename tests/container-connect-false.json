@@ -1,0 +1,221 @@
+{
+   "Id": "fd9e1b793a99d2041ad60eaff2c226195fb06688d23ff11ed64b480526321ffd",
+   "Created": "2024-08-15T22:22:44.926687885Z",
+   "Path": "/whoami",
+   "Args": [],
+   "State": {
+      "Status": "running",
+      "Running": true,
+      "Paused": false,
+      "Restarting": false,
+      "OOMKilled": false,
+      "Dead": false,
+      "Pid": 501,
+      "ExitCode": 0,
+      "Error": "",
+      "StartedAt": "2024-08-15T22:22:45.346458131Z",
+      "FinishedAt": "0001-01-01T00:00:00Z"
+   },
+   "Image": "sha256:0f6fbbedd3777530ea3bedadf0a75b9aba805a55f6c5481ef0ebd762c5eeb818",
+   "ResolvConfPath": "/var/lib/docker/containers/fd9e1b793a99d2041ad60eaff2c226195fb06688d23ff11ed64b480526321ffd/resolv.conf",
+   "HostnamePath": "/var/lib/docker/containers/fd9e1b793a99d2041ad60eaff2c226195fb06688d23ff11ed64b480526321ffd/hostname",
+   "HostsPath": "/var/lib/docker/containers/fd9e1b793a99d2041ad60eaff2c226195fb06688d23ff11ed64b480526321ffd/hosts",
+   "LogPath": "/var/lib/docker/containers/fd9e1b793a99d2041ad60eaff2c226195fb06688d23ff11ed64b480526321ffd/fd9e1b793a99d2041ad60eaff2c226195fb06688d23ff11ed64b480526321ffd-json.log",
+   "Name": "/tests-whoami-1",
+   "RestartCount": 0,
+   "Driver": "overlay2",
+   "Platform": "linux",
+   "MountLabel": "",
+   "ProcessLabel": "",
+   "AppArmorProfile": "",
+   "ExecIDs": null,
+   "HostConfig": {
+      "Binds": null,
+      "ContainerIDFile": "",
+      "LogConfig": {
+         "Type": "json-file",
+         "Config": {}
+      },
+      "NetworkMode": "tests_default",
+      "PortBindings": {
+         "80/tcp": [
+            {
+               "HostIp": "",
+               "HostPort": "8080"
+            }
+         ]
+      },
+      "RestartPolicy": {
+         "Name": "no",
+         "MaximumRetryCount": 0
+      },
+      "AutoRemove": false,
+      "VolumeDriver": "",
+      "VolumesFrom": null,
+      "ConsoleSize": [0, 0],
+      "CapAdd": null,
+      "CapDrop": null,
+      "CgroupnsMode": "host",
+      "Dns": null,
+      "DnsOptions": null,
+      "DnsSearch": null,
+      "ExtraHosts": [],
+      "GroupAdd": null,
+      "IpcMode": "private",
+      "Cgroup": "",
+      "Links": null,
+      "OomScoreAdj": 0,
+      "PidMode": "",
+      "Privileged": false,
+      "PublishAllPorts": false,
+      "ReadonlyRootfs": false,
+      "SecurityOpt": null,
+      "UTSMode": "",
+      "UsernsMode": "",
+      "ShmSize": 67108864,
+      "Runtime": "runc",
+      "Isolation": "",
+      "CpuShares": 0,
+      "Memory": 0,
+      "NanoCpus": 0,
+      "CgroupParent": "",
+      "BlkioWeight": 0,
+      "BlkioWeightDevice": null,
+      "BlkioDeviceReadBps": null,
+      "BlkioDeviceWriteBps": null,
+      "BlkioDeviceReadIOps": null,
+      "BlkioDeviceWriteIOps": null,
+      "CpuPeriod": 0,
+      "CpuQuota": 0,
+      "CpuRealtimePeriod": 0,
+      "CpuRealtimeRuntime": 0,
+      "CpusetCpus": "",
+      "CpusetMems": "",
+      "Devices": null,
+      "DeviceCgroupRules": null,
+      "DeviceRequests": null,
+      "MemoryReservation": 0,
+      "MemorySwap": 0,
+      "MemorySwappiness": null,
+      "OomKillDisable": false,
+      "PidsLimit": null,
+      "Ulimits": null,
+      "CpuCount": 0,
+      "CpuPercent": 0,
+      "IOMaximumIOps": 0,
+      "IOMaximumBandwidth": 0,
+      "MaskedPaths": [
+         "/proc/asound",
+         "/proc/acpi",
+         "/proc/kcore",
+         "/proc/keys",
+         "/proc/latency_stats",
+         "/proc/timer_list",
+         "/proc/timer_stats",
+         "/proc/sched_debug",
+         "/proc/scsi",
+         "/sys/firmware",
+         "/sys/devices/virtual/powercap"
+      ],
+      "ReadonlyPaths": [
+         "/proc/bus",
+         "/proc/fs",
+         "/proc/irq",
+         "/proc/sys",
+         "/proc/sysrq-trigger"
+      ]
+   },
+   "GraphDriver": {
+      "Data": {
+         "LowerDir": "/var/lib/docker/overlay2/eec1fefedfa047b32f0570846a796c1e4dea3e8d21556a33e66f2af73030159e-init/diff:/var/lib/docker/overlay2/2c4a723874639e12c7bdd3288fdd32210d4faf4408f0be35a2115521dd2fe206/diff:/var/lib/docker/overlay2/e688d609b71e152a74698b39e46c96502aaca1864d05afaaf2d55fe98ca5f7c3/diff:/var/lib/docker/overlay2/6a61cabcf7ecba13b35d39f994a26106e68238f4a075c726d77a31c96f8790f4/diff",
+         "MergedDir": "/var/lib/docker/overlay2/eec1fefedfa047b32f0570846a796c1e4dea3e8d21556a33e66f2af73030159e/merged",
+         "UpperDir": "/var/lib/docker/overlay2/eec1fefedfa047b32f0570846a796c1e4dea3e8d21556a33e66f2af73030159e/diff",
+         "WorkDir": "/var/lib/docker/overlay2/eec1fefedfa047b32f0570846a796c1e4dea3e8d21556a33e66f2af73030159e/work"
+      },
+      "Name": "overlay2"
+   },
+   "Mounts": [],
+   "Config": {
+      "Hostname": "fd9e1b793a99",
+      "Domainname": "",
+      "User": "",
+      "AttachStdin": false,
+      "AttachStdout": true,
+      "AttachStderr": true,
+      "ExposedPorts": {
+         "80/tcp": {}
+      },
+      "Tty": false,
+      "OpenStdin": false,
+      "StdinOnce": false,
+      "Env": [
+         "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+      ],
+      "Cmd": null,
+      "Image": "containous/whoami",
+      "Volumes": null,
+      "WorkingDir": "",
+      "Entrypoint": ["/whoami"],
+      "OnBuild": null,
+      "Labels": {
+         "com.docker.compose.config-hash": "9f43baa741d274b52a31b0d3d92cdd68335469d095c6929a264ead5a9a538269",
+         "com.docker.compose.container-number": "1",
+         "com.docker.compose.depends_on": "",
+         "com.docker.compose.image": "sha256:0f6fbbedd3777530ea3bedadf0a75b9aba805a55f6c5481ef0ebd762c5eeb818",
+         "com.docker.compose.oneoff": "False",
+         "com.docker.compose.project": "tests",
+         "com.docker.compose.project.config_files": "C:\\Users\\cartm\\Dev\\consul-register\\tests\\docker-compose.yml",
+         "com.docker.compose.project.working_dir": "C:\\Users\\cartm\\Dev\\consul-register\\tests",
+         "com.docker.compose.service": "whoami",
+         "com.docker.compose.version": "2.27.0",
+         "traefik.consulcatalog.connect": "false",
+         "traefik.enable": "true",
+         "traefik.http.routers.whoami.rule": "Host(`whoami.localhost`)",
+         "traefik.http.services.whoami.loadbalancer.server.port": "8080"
+      }
+   },
+   "NetworkSettings": {
+      "Bridge": "",
+      "SandboxID": "c0a3981f22891f5eeeba1d827463ac2ecfea1c96cd0a22f48a7a4b562fcfc807",
+      "SandboxKey": "/var/run/docker/netns/c0a3981f2289",
+      "Ports": {
+         "80/tcp": [
+            {
+               "HostIp": "0.0.0.0",
+               "HostPort": "8080"
+            }
+         ]
+      },
+      "HairpinMode": false,
+      "LinkLocalIPv6Address": "",
+      "LinkLocalIPv6PrefixLen": 0,
+      "SecondaryIPAddresses": null,
+      "SecondaryIPv6Addresses": null,
+      "EndpointID": "",
+      "Gateway": "",
+      "GlobalIPv6Address": "",
+      "GlobalIPv6PrefixLen": 0,
+      "IPAddress": "",
+      "IPPrefixLen": 0,
+      "IPv6Gateway": "",
+      "MacAddress": "",
+      "Networks": {
+         "tests_default": {
+            "IPAMConfig": null,
+            "Links": null,
+            "Aliases": ["tests-whoami-1", "whoami"],
+            "MacAddress": "02:42:ac:12:00:02",
+            "NetworkID": "e792cf37d8973fc0db94f26823d42fdd692c194ef7b9d4762840e666e8d76e98",
+            "EndpointID": "3a0c919b7564749ac70a463e75c53f3ce54e341e40ef100dc7ca3ec359941f42",
+            "Gateway": "172.18.0.1",
+            "IPAddress": "172.18.0.2",
+            "IPPrefixLen": 16,
+            "IPv6Gateway": "",
+            "GlobalIPv6Address": "",
+            "GlobalIPv6PrefixLen": 0,
+            "DriverOpts": null,
+            "DNSNames": ["tests-whoami-1", "whoami", "fd9e1b793a99"]
+         }
+      }
+   }
+}

@@ -9,8 +9,13 @@ import {
 import { getServiceFromLabels, ServiceDescription } from "./service";
 
 const abortController = new AbortController();
-const unregisterEvents = ["die", "stop", "kill", "destroy", "rename"];
-const registerEvents = ["start", "restart", "update"];
+const deregistrationTimers = new Map<string, NodeJS.Timeout>();
+
+// Choose one of the stopping events: ["die", "stop", "kill", "destroy", "rename"];
+const unregisterEvents = ["stop"];
+
+// Choose one of the starting events: ["start", "restart", "update"];
+const registerEvents = ["start"];
 
 async function main() {
    const startTime = Date.now();
@@ -49,8 +54,8 @@ async function main() {
    logger.info("Checking for services that are not running anymore");
    const servicesToRemove = Object.entries(registeredServices)
       .filter(
-         ([serviceName, service]) =>
-            !runningServices.find((s) => s.serviceName === serviceName),
+         ([serviceId, service]) =>
+            !runningServices.find((s) => s.serviceId === serviceId),
       )
       .map(([serviceName]) => serviceName);
 
@@ -73,14 +78,21 @@ async function main() {
       const eventData = dockerEventSchema.parse(JSON.parse(event.toString()));
 
       const containerId = eventData.id;
+      const containerName = eventData.Actor.Attributes.name;
       logger.info(
-         `Container ${eventData.Action}: ${eventData.Actor.Attributes.name}`,
+         `Container ${eventData.Action}: ${containerName} (${containerId})`,
       );
       if (registerEvents.includes(eventData.Action)) {
          const container = await docker.getContainer(containerId).inspect();
 
          const service = getServiceFromLabels(container);
          if (service) {
+            // Stop any pending deregistration timers
+            if (deregistrationTimers.has(containerName)) {
+               clearTimeout(deregistrationTimers.get(containerName)!);
+               deregistrationTimers.delete(containerName);
+            }
+
             logger.info(
                service.connect
                   ? "Service uses Consul Connect"
@@ -96,8 +108,24 @@ async function main() {
             logger.info(`Registered service ${service.serviceName}`);
          }
       } else {
-         await deregisterService(eventData.Actor.Attributes.name!);
-         logger.info(`Deregistered service ${eventData.Actor.Attributes.name}`);
+         // Debounce and wait for 5 seconds before deregistering the service to allow for restarts
+         if (deregistrationTimers.has(containerName)) {
+            clearTimeout(deregistrationTimers.get(containerName)!);
+            deregistrationTimers.delete(containerName);
+         }
+
+         const timeout = setTimeout(
+            async () => {
+               await deregisterService(eventData.Actor.Attributes.name!);
+               logger.info(
+                  `Deregistered service ${eventData.Actor.Attributes.name}`,
+               );
+               deregistrationTimers.delete(containerName);
+            },
+            Number(process.env.GRACE_TIME) ?? 5000,
+         );
+
+         deregistrationTimers.set(containerName, timeout);
       }
    });
 

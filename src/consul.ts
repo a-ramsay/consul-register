@@ -64,7 +64,7 @@ export async function getRegisteredServices() {
 }
 
 type ServiceResponse = {
-   [service: string]: Service;
+   [serviceId: string]: Service;
 };
 type Service = {
    ID: string;

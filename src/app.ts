@@ -10,6 +10,7 @@ import { getServiceFromLabels, ServiceDescription } from "./service";
 
 const abortController = new AbortController();
 const deregistrationTimers = new Map<string, NodeJS.Timeout>();
+let refreshTimer: NodeJS.Timeout;
 
 // Choose one of the stopping events: ["die", "stop", "kill", "destroy", "rename"];
 const unregisterEvents = ["stop"];
@@ -21,47 +22,9 @@ async function main() {
    const startTime = Date.now();
    const docker = new Dockerode();
 
-   // Check for missing services on start
-   logger.info("Checking for missing services");
-   const containers = await docker.listContainers();
-   const runningContainers = await Promise.all(
-      containers
-         .filter((container) => container.State === "running")
-         .map((container) => docker.getContainer(container.Id).inspect()),
-   );
-
-   const runningServices = runningContainers
-      .map((container) => getServiceFromLabels(container))
-      .filter(Boolean) as ServiceDescription[];
-   const registeredServices = await getRegisteredServices();
-   const servicesToRegister = runningServices.filter(
-      (service) => !registeredServices[service.serviceName],
-   );
-
-   await Promise.all(
-      servicesToRegister.map((service) =>
-         registerService(
-            service.serviceId,
-            service.serviceName,
-            service.servicePort,
-            service.traefikLabels,
-            service.connect,
-         ),
-      ),
-   );
-
-   // Check for services that are not running anymore
-   logger.info("Checking for services that are not running anymore");
-   const servicesToRemove = Object.entries(registeredServices)
-      .filter(
-         ([serviceId, service]) =>
-            !runningServices.find((s) => s.serviceId === serviceId),
-      )
-      .map(([serviceName]) => serviceName);
-
-   await Promise.all(
-      servicesToRemove.map((serviceName) => deregisterService(serviceName)),
-   );
+   // Refresh services on start
+   logger.info("Making sure all services are registered");
+   await refreshServices(docker);
 
    // Listen for Docker events
    logger.info("Listening for Docker events");
@@ -73,6 +36,16 @@ async function main() {
          type: ["container"],
       },
    });
+
+   // Refresh services every 10 seconds
+   if (
+      process.env.AUTO_REFRESH !== undefined &&
+      !Boolean(process.env.AUTO_REFRESH)
+   ) {
+      refreshTimer = setInterval(async () => {
+         await refreshServices(docker);
+      }, 10000);
+   }
 
    stream.on("data", async (event) => {
       const eventData = dockerEventSchema.parse(JSON.parse(event.toString()));
@@ -137,6 +110,46 @@ async function main() {
    });
 }
 
+async function refreshServices(docker: Dockerode) {
+   const containers = await docker.listContainers();
+   const runningContainers = await Promise.all(
+      containers
+         .filter((container) => container.State === "running")
+         .map((container) => docker.getContainer(container.Id).inspect()),
+   );
+
+   const runningServices = runningContainers
+      .map((container) => getServiceFromLabels(container))
+      .filter(Boolean) as ServiceDescription[];
+   const registeredServices = await getRegisteredServices();
+   const servicesToRegister = runningServices.filter(
+      (service) => !registeredServices[service.serviceName],
+   );
+
+   await Promise.all(
+      servicesToRegister.map((service) =>
+         registerService(
+            service.serviceId,
+            service.serviceName,
+            service.servicePort,
+            service.traefikLabels,
+            service.connect,
+         ),
+      ),
+   );
+
+   const servicesToRemove = Object.entries(registeredServices)
+      .filter(
+         ([serviceId, service]) =>
+            !runningServices.find((s) => s.serviceId === serviceId),
+      )
+      .map(([serviceName]) => serviceName);
+
+   await Promise.all(
+      servicesToRemove.map((serviceName) => deregisterService(serviceName)),
+   );
+}
+
 main().catch((err) => {
    logger.error(err);
    process.exit(1);
@@ -145,10 +158,12 @@ main().catch((err) => {
 process.on("SIGINT", () => {
    logger.info("Received SIGINT, stopping the service");
    abortController.abort();
+   clearTimeout(refreshTimer);
 });
 process.on("SIGTERM", () => {
    logger.info("Received SIGTERM, stopping the service");
    abortController.abort();
+   clearTimeout(refreshTimer);
 });
 
 const dockerEventSchema = z.object({

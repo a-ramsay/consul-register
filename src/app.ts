@@ -10,7 +10,6 @@ import { getServiceFromLabels, ServiceDescription } from "./service";
 
 const abortController = new AbortController();
 const deregistrationTimers = new Map<string, NodeJS.Timeout>();
-let refreshTimer: NodeJS.Timeout;
 
 // Choose one of the stopping events: ["die", "stop", "kill", "destroy", "rename"];
 const unregisterEvents = ["stop"];
@@ -36,17 +35,6 @@ async function main() {
          type: ["container"],
       },
    });
-
-   // Refresh services every 10 seconds
-   if (
-      process.env.AUTO_REFRESH === undefined ||
-      Boolean(process.env.AUTO_REFRESH)
-   ) {
-      logger.info("Auto refresh enabled");
-      refreshTimer = setInterval(async () => {
-         await refreshServices(docker);
-      }, 10000);
-   }
 
    stream.on("data", async (event) => {
       const eventData = dockerEventSchema.parse(JSON.parse(event.toString()));
@@ -159,12 +147,10 @@ main().catch((err) => {
 process.on("SIGINT", () => {
    logger.info("Received SIGINT, stopping the service");
    abortController.abort();
-   clearTimeout(refreshTimer);
 });
 process.on("SIGTERM", () => {
    logger.info("Received SIGTERM, stopping the service");
    abortController.abort();
-   clearTimeout(refreshTimer);
 });
 
 const dockerEventSchema = z.object({

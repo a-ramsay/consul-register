@@ -42,7 +42,7 @@ async function main() {
       process.env.AUTO_REFRESH === undefined ||
       Boolean(process.env.AUTO_REFRESH)
    ) {
-      console.log("Auto refresh enabled");
+      logger.info("Auto refresh enabled");
       refreshTimer = setInterval(async () => {
          await refreshServices(docker);
       }, 10000);

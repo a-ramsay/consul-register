@@ -39,9 +39,10 @@ async function main() {
 
    // Refresh services every 10 seconds
    if (
-      process.env.AUTO_REFRESH !== undefined &&
-      !Boolean(process.env.AUTO_REFRESH)
+      process.env.AUTO_REFRESH === undefined ||
+      Boolean(process.env.AUTO_REFRESH)
    ) {
+      console.log("Auto refresh enabled");
       refreshTimer = setInterval(async () => {
          await refreshServices(docker);
       }, 10000);

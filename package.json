@@ -27,7 +27,7 @@
       "typescript": "^5.5.4"
    },
    "dependencies": {
-      "dockerode": "^4.0.2",
+      "dockerode": "^4.0.9",
       "pino": "^9.3.2",
       "pino-pretty": "^11.2.2",
       "zod": "^3.23.8"

@@ -37,7 +37,17 @@ async function main() {
    });
 
    stream.on("data", async (event) => {
-      const eventData = dockerEventSchema.parse(JSON.parse(event.toString()));
+      const { error, data: eventData } = dockerEventSchema.safeParse(
+         JSON.parse(event.toString()),
+      );
+      if (!eventData) {
+         console.error(`Could not parse event:`);
+         console.error(JSON.stringify(event, undefined, 2));
+         console.error("--- ERROR ---");
+         console.error(JSON.stringify(error, undefined, 2));
+         console.error("--- END ERROR ---");
+         return;
+      }
 
       const containerId = eventData.id;
       const containerName = eventData.Actor.Attributes.name;

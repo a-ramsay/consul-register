@@ -37,12 +37,12 @@ async function main() {
    });
 
    stream.on("data", async (event) => {
-      const { error, data: eventData } = dockerEventSchema.safeParse(
-         JSON.parse(event.toString()),
-      );
+      const eventObject = JSON.parse(event.toString());
+      const { error, data: eventData } =
+         dockerEventSchema.safeParse(eventObject);
       if (!eventData) {
          console.error(`Could not parse event:`);
-         console.error(JSON.stringify(event, undefined, 2));
+         console.error(JSON.stringify(eventObject, undefined, 2));
          console.error("--- ERROR ---");
          console.error(JSON.stringify(error, undefined, 2));
          console.error("--- END ERROR ---");

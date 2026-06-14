@@ -51,6 +51,7 @@ async function main() {
 
       const containerId = eventData.id;
       const containerName = eventData.Actor.Attributes.name;
+
       logger.info(
          `Container ${eventData.Action}: ${containerName} (${containerId})`,
       );
@@ -171,7 +172,7 @@ const dockerEventSchema = z.object({
    Action: z.string(),
    Actor: z.object({
       ID: z.string(),
-      Attributes: z.record(z.string()),
+      Attributes: z.record(z.string(), z.string()),
    }),
    scope: z.string(),
    time: z.number(),

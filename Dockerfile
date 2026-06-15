@@ -1,19 +1,19 @@
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
+COPY package.json pnpm-*.yaml ./
+RUN corepack enable && pnpm ci
 
 COPY . .
 RUN npm run build
 
-FROM node:22-alpine AS runner
+FROM node:24-alpine AS runner
 LABEL org.opencontainers.image.source=https://github.com/a-ramsay/consul-register
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY package.json package-lock.json ./
-RUN npm ci --only=production
+COPY package.json pnpm-*.yaml ./
+RUN corepack enable && pnpm ci --prod
 
 COPY --from=builder /app/dist ./
 

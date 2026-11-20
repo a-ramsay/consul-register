@@ -49,7 +49,7 @@ async function main() {
          return;
       }
 
-      const containerId = eventData.id;
+      const containerId = eventData.id ?? eventData.Actor.ID;
       const containerName = eventData.Actor.Attributes.name;
 
       logger.info(
@@ -166,8 +166,8 @@ process.on("SIGTERM", () => {
 
 const dockerEventSchema = z.object({
    status: z.string().optional(),
-   id: z.string(),
-   from: z.string(),
+   id: z.string().optional(),
+   from: z.string().optional(),
    Type: z.string(),
    Action: z.string(),
    Actor: z.object({

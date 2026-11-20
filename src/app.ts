@@ -165,7 +165,7 @@ process.on("SIGTERM", () => {
 });
 
 const dockerEventSchema = z.object({
-   status: z.string(),
+   status: z.string().optional(),
    id: z.string(),
    from: z.string(),
    Type: z.string(),
